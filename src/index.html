@@ -2,11 +2,25 @@
 <html>
   <head>
     <title>TaskFlow</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 20px; }
+      #taskForm { margin-bottom: 20px; }
+      input, textarea { width: 100%; margin-bottom: 10px; padding: 8px; }
+      button { padding: 10px 15px; }
+      .task { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    </style>
   </head>
   <body>
-    <h1>Welcome to TaskFlow!</h1>
-    <button id="addTaskBtn">Add Task</button>
+    <h1>TaskFlow</h1>
+
+    <form id="taskForm">
+      <input type="text" id="taskTitle" placeholder="Task Title" required />
+      <textarea id="taskDescription" placeholder="Task Description"></textarea>
+      <button type="submit">Add Task</button>
+    </form>
+
+    <div id="taskList"></div>
+
     <script src="renderer.js"></script>
   </body>
 </html>
-
