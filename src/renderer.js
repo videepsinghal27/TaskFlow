@@ -9,14 +9,17 @@ function addTaskHandler(e) {
 
   const title = document.getElementById('taskTitle').value;
   const description = document.getElementById('taskDescription').value;
-  const priority = document.getElementById('taskPriority').value; // Get priority value
+  const priority = document.getElementById('taskPriority').value;
+  const tagsInput = document.getElementById('taskTags').value;
 
   if (title.trim() === '') {
     alert('Task title is required!');
     return;
   }
 
-  const task = { title, description, priority, completed: false }; // Include priority
+  const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()) : [];
+
+  const task = { title, description, priority, tags, completed: false };
 
   // Save task to localStorage
   const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
@@ -40,18 +43,23 @@ function renderTaskList() {
   tasks.forEach((task, index) => addTaskToDOM(task, index));
 }
 
-// Add task to DOM with Edit, Delete, and Complete buttons
+// Add task to DOM with Edit, Delete, Complete buttons, and Tags
 function addTaskToDOM(task, index) {
   const taskList = document.getElementById('taskList');
 
   const taskDiv = document.createElement('div');
-  taskDiv.className = `task priority-${task.priority}`; // Add priority class
+  taskDiv.className = `task priority-${task.priority}`;
+
+  const tagsHTML = task.tags && task.tags.length 
+    ? `<div class="tags">${task.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>` 
+    : '';
 
   taskDiv.innerHTML = `
     <input type="checkbox" onclick="toggleTaskCompletion(${index})" ${task.completed ? 'checked' : ''}>
     <h3 class="${task.completed ? 'completed' : ''}">${task.title}</h3>
     <p class="${task.completed ? 'completed' : ''}">${task.description}</p>
     <span class="priority-label">${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority</span>
+    ${tagsHTML}
     <button onclick="editTask(${index})">Edit</button>
     <button onclick="deleteTask(${index})">Delete</button>
   `;
@@ -63,13 +71,9 @@ function addTaskToDOM(task, index) {
 function toggleTaskCompletion(index) {
   const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 
-  // Toggle the completed status
   tasks[index].completed = !tasks[index].completed;
 
-  // Save the updated tasks back to localStorage
   localStorage.setItem('tasks', JSON.stringify(tasks));
-
-  // Re-render the task list to reflect changes
   renderTaskList();
 }
 
@@ -78,40 +82,32 @@ function editTask(index) {
   const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
   const task = tasks[index];
 
-  // Populate the form with the task's current details
   document.getElementById('taskTitle').value = task.title;
   document.getElementById('taskDescription').value = task.description;
-  document.getElementById('taskPriority').value = task.priority; // Populate priority
+  document.getElementById('taskPriority').value = task.priority;
+  document.getElementById('taskTags').value = task.tags.join(', ');
 
-  // Change the submit button text to "Update Task"
   const submitButton = document.querySelector('#taskForm button');
   submitButton.textContent = 'Update Task';
 
-  // Remove the existing add task event listener
   const form = document.getElementById('taskForm');
   form.removeEventListener('submit', addTaskHandler);
 
-  // Add the update task functionality
   form.addEventListener('submit', function updateTask(e) {
     e.preventDefault();
 
-    // Update the task with new values
     task.title = document.getElementById('taskTitle').value;
     task.description = document.getElementById('taskDescription').value;
-    task.priority = document.getElementById('taskPriority').value; // Update priority
+    task.priority = document.getElementById('taskPriority').value;
+    task.tags = document.getElementById('taskTags').value.split(',').map(tag => tag.trim());
 
-    // Save the updated task list back to localStorage
     tasks[index] = task;
     localStorage.setItem('tasks', JSON.stringify(tasks));
 
-    // Reset the form and UI
     form.reset();
     submitButton.textContent = 'Add Task';
-
-    // Re-render the task list
     renderTaskList();
 
-    // Remove the update listener and restore the add task functionality
     form.removeEventListener('submit', updateTask);
     form.addEventListener('submit', addTaskHandler);
   });
@@ -121,16 +117,33 @@ function editTask(index) {
 function deleteTask(index) {
   const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 
-  // Confirm deletion with the user
   const confirmDelete = confirm('Are you sure you want to delete this task?');
   if (!confirmDelete) return;
 
-  // Remove the task from the array
   tasks.splice(index, 1);
-
-  // Save the updated task list back to localStorage
   localStorage.setItem('tasks', JSON.stringify(tasks));
-
-  // Re-render the task list to reflect the deletion
   renderTaskList();
+}
+
+// Filter Tasks by Tag
+function filterTasksByTag() {
+  const filterValue = document.getElementById('filterTags').value.trim().toLowerCase();
+  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+  const filteredTasks = tasks.filter(task => 
+    task.tags.some(tag => tag.toLowerCase().includes(filterValue))
+  );
+
+  renderFilteredTasks(filteredTasks);
+}
+
+function renderFilteredTasks(filteredTasks) {
+  const taskList = document.getElementById('taskList');
+  taskList.innerHTML = '';
+
+  if (filteredTasks.length === 0 && document.getElementById('filterTags').value !== '') {
+    taskList.innerHTML = '<p>No tasks found for this tag.</p>';
+  } else {
+    filteredTasks.forEach((task, index) => addTaskToDOM(task, index));
+  }
 }
