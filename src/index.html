@@ -5,14 +5,27 @@
     <style>
       body { font-family: Arial, sans-serif; padding: 20px; }
       #taskForm { margin-bottom: 20px; }
-      input[type="text"], textarea { width: 100%; margin-bottom: 10px; padding: 8px; }
+      input[type="text"], textarea, select { width: 100%; margin-bottom: 10px; padding: 8px; }
       button { padding: 10px 15px; margin-right: 5px; }
-      .task { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+      .task { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
 
       /* Styling for completed tasks */
       .completed {
         text-decoration: line-through;
         color: #888;
+      }
+
+      /* Priority styles */
+      .priority-high { border-left: 5px solid red; }
+      .priority-medium { border-left: 5px solid orange; }
+      .priority-low { border-left: 5px solid green; }
+
+      .priority-label {
+        font-weight: bold;
+        padding: 3px 5px;
+        border-radius: 3px;
+        background-color: #f0f0f0;
+        width: fit-content;
       }
     </style>
   </head>
@@ -22,6 +35,15 @@
     <form id="taskForm">
       <input type="text" id="taskTitle" placeholder="Task Title" required />
       <textarea id="taskDescription" placeholder="Task Description"></textarea>
+
+      <!-- Priority Dropdown -->
+      <label for="taskPriority">Priority:</label>
+      <select id="taskPriority">
+        <option value="low">Low</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High</option>
+      </select>
+
       <button type="submit">Add Task</button>
     </form>
 
