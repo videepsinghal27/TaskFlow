@@ -9,13 +9,14 @@ function addTaskHandler(e) {
 
   const title = document.getElementById('taskTitle').value;
   const description = document.getElementById('taskDescription').value;
+  const priority = document.getElementById('taskPriority').value; // Get priority value
 
   if (title.trim() === '') {
     alert('Task title is required!');
     return;
   }
 
-  const task = { title, description, completed: false }; // Add completed flag
+  const task = { title, description, priority, completed: false }; // Include priority
 
   // Save task to localStorage
   const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
@@ -44,11 +45,13 @@ function addTaskToDOM(task, index) {
   const taskList = document.getElementById('taskList');
 
   const taskDiv = document.createElement('div');
-  taskDiv.className = 'task';
+  taskDiv.className = `task priority-${task.priority}`; // Add priority class
+
   taskDiv.innerHTML = `
     <input type="checkbox" onclick="toggleTaskCompletion(${index})" ${task.completed ? 'checked' : ''}>
     <h3 class="${task.completed ? 'completed' : ''}">${task.title}</h3>
     <p class="${task.completed ? 'completed' : ''}">${task.description}</p>
+    <span class="priority-label">${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority</span>
     <button onclick="editTask(${index})">Edit</button>
     <button onclick="deleteTask(${index})">Delete</button>
   `;
@@ -78,6 +81,7 @@ function editTask(index) {
   // Populate the form with the task's current details
   document.getElementById('taskTitle').value = task.title;
   document.getElementById('taskDescription').value = task.description;
+  document.getElementById('taskPriority').value = task.priority; // Populate priority
 
   // Change the submit button text to "Update Task"
   const submitButton = document.querySelector('#taskForm button');
@@ -94,6 +98,7 @@ function editTask(index) {
     // Update the task with new values
     task.title = document.getElementById('taskTitle').value;
     task.description = document.getElementById('taskDescription').value;
+    task.priority = document.getElementById('taskPriority').value; // Update priority
 
     // Save the updated task list back to localStorage
     tasks[index] = task;
