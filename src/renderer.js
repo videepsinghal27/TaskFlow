@@ -15,7 +15,7 @@ function addTaskHandler(e) {
     return;
   }
 
-  const task = { title, description };
+  const task = { title, description, completed: false }; // Add completed flag
 
   // Save task to localStorage
   const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
@@ -39,20 +39,35 @@ function renderTaskList() {
   tasks.forEach((task, index) => addTaskToDOM(task, index));
 }
 
-// Add task to DOM with Edit and Delete buttons
+// Add task to DOM with Edit, Delete, and Complete buttons
 function addTaskToDOM(task, index) {
   const taskList = document.getElementById('taskList');
 
   const taskDiv = document.createElement('div');
   taskDiv.className = 'task';
   taskDiv.innerHTML = `
-    <h3>${task.title}</h3>
-    <p>${task.description}</p>
+    <input type="checkbox" onclick="toggleTaskCompletion(${index})" ${task.completed ? 'checked' : ''}>
+    <h3 class="${task.completed ? 'completed' : ''}">${task.title}</h3>
+    <p class="${task.completed ? 'completed' : ''}">${task.description}</p>
     <button onclick="editTask(${index})">Edit</button>
     <button onclick="deleteTask(${index})">Delete</button>
   `;
 
   taskList.appendChild(taskDiv);
+}
+
+// Toggle Task Completion Functionality
+function toggleTaskCompletion(index) {
+  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+  // Toggle the completed status
+  tasks[index].completed = !tasks[index].completed;
+
+  // Save the updated tasks back to localStorage
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+
+  // Re-render the task list to reflect changes
+  renderTaskList();
 }
 
 // Edit Task Functionality
