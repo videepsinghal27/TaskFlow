@@ -39,7 +39,7 @@ function renderTaskList() {
   tasks.forEach((task, index) => addTaskToDOM(task, index));
 }
 
-// Add task to DOM with Edit button
+// Add task to DOM with Edit and Delete buttons
 function addTaskToDOM(task, index) {
   const taskList = document.getElementById('taskList');
 
@@ -49,6 +49,7 @@ function addTaskToDOM(task, index) {
     <h3>${task.title}</h3>
     <p>${task.description}</p>
     <button onclick="editTask(${index})">Edit</button>
+    <button onclick="deleteTask(${index})">Delete</button>
   `;
 
   taskList.appendChild(taskDiv);
@@ -94,4 +95,22 @@ function editTask(index) {
     form.removeEventListener('submit', updateTask);
     form.addEventListener('submit', addTaskHandler);
   });
+}
+
+// Delete Task Functionality
+function deleteTask(index) {
+  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+  // Confirm deletion with the user
+  const confirmDelete = confirm('Are you sure you want to delete this task?');
+  if (!confirmDelete) return;
+
+  // Remove the task from the array
+  tasks.splice(index, 1);
+
+  // Save the updated task list back to localStorage
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+
+  // Re-render the task list to reflect the deletion
+  renderTaskList();
 }
