@@ -19,77 +19,113 @@ function createWindow() {
   // Minimize to tray but keep showing in taskbar
   win.on('minimize', (event) => {
     event.preventDefault();
-    win.minimize();  // Keep in taskbar
-    createTray();    // Also show in system tray
+    win.hide();
+    createTray();
   });
 
-  // Close the app completely when clicking the close button
+  // Fully close the app when clicking the close button (X)
   win.on('close', () => {
-    if (tray) tray.destroy();  // Clean up tray icon when closing
+    if (tray) tray.destroy();  // Destroy tray icon
     app.quit();                // Fully quit the app
   });
 }
 
 // Create Tray Icon and Handle Events
 function createTray() {
-  if (tray) return;  // Avoid creating multiple tray icons
+  if (tray) return;
 
-  tray = new Tray(path.join(__dirname, 'assets', 'icon.png'));  // Ensure icon.png exists in assets folder
+  tray = new Tray(path.join(__dirname, 'assets', 'icon.png'));
 
   const trayMenu = Menu.buildFromTemplate([
-    { 
-      label: 'Restore', 
-      click: () => { 
-        restoreApp();
-      } 
-    },
+    { label: 'Restore', click: restoreApp },
     { 
       label: 'Exit', 
       click: () => { 
-        if (tray) tray.destroy();
+        if (tray) tray.destroy(); 
         app.quit();
-      } 
+      }
     }
   ]);
 
   tray.setToolTip('TaskFlow');
   tray.setContextMenu(trayMenu);
+  tray.on('click', restoreApp);
 
-  // Restore the app on left-click of the tray icon
-  tray.on('click', () => {
-    restoreApp();
+  // Double-click to fully exit from tray
+  tray.on('double-click', () => {
+    if (tray) tray.destroy();
+    app.quit();
   });
 }
 
-// Restore the App Function
+// Restore the App
 function restoreApp() {
-  if (win.isMinimized()) {
-    win.restore();  // Restore if minimized
+  if (win.isMinimized() || !win.isVisible()) {
+    win.show();
   }
-  win.show();  // Ensure window is visible
+  win.focus();
 }
 
-// Handle reminders from the renderer process
+// Handle reminders with Snooze and Dismiss options
 ipcMain.on('schedule-reminder', (event, task) => {
-  const reminderTime = new Date(`${task.reminderDate}T${task.reminderTime}`).getTime();
   const now = Date.now();
-  const delay = reminderTime - now;
+  const reminderTime = new Date(`${task.reminderDate}T${task.reminderTime}`).getTime();
+  const delay = Math.max(reminderTime - now, 0);
 
-  if (delay > 0) {
-    setTimeout(() => {
-      new Notification({
-        title: `Reminder: ${task.title}`,
-        body: `${task.description}\nDue: ${task.reminderDate} at ${task.reminderTime}`
-      }).show();
+  setTimeout(() => {
+    const notification = new Notification({
+      title: `Reminder: ${task.title}`,
+      body: `${task.description}\nDue: ${task.reminderDate} at ${task.reminderTime}`,
+      actions: [
+        { type: 'button', text: 'Snooze' },
+        { type: 'button', text: 'Dismiss' }
+      ],
+      closeButtonText: 'Close'
+    });
 
-      if (win) win.webContents.send('trigger-reminder', task);
-    }, delay);
-  }
+    notification.show();
+
+    notification.on('action', (event, index) => {
+      if (index === 0) {
+        win.webContents.send('snooze-reminder', task);
+      } else if (index === 1) {
+        win.webContents.send('dismiss-reminder', task);
+      }
+    });
+
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('trigger-reminder', task);
+    }
+  }, delay);
+});
+
+// Handle snooze requests
+ipcMain.on('snooze-reminder', (event, task) => {
+  const snoozeDuration = 5 * 60 * 1000;
+
+  setTimeout(() => {
+    const notification = new Notification({
+      title: `Snoozed Reminder: ${task.title}`,
+      body: `${task.description}\n(Snoozed by 5 mins)`
+    });
+    notification.show();
+
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('trigger-reminder', task);
+    }
+  }, snoozeDuration);
 });
 
 app.whenReady().then(createWindow);
 
-// For macOS: Re-create window if the dock icon is clicked after all windows are closed
+// For macOS: Recreate window if dock icon is clicked and no windows are open
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});
+
+// Ensure app quits when all windows are closed (except on macOS)
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
 });

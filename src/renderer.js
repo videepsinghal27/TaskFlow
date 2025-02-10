@@ -3,9 +3,28 @@ const { ipcRenderer } = require('electron');
 // Load tasks on startup
 window.onload = () => {
   requestNotificationPermission();
+  ensureTaskIds();
   renderTaskList();
-  scheduleExistingReminders();  // Schedule reminders on load
+  scheduleExistingReminders();
 };
+
+// Ensure all tasks have unique IDs
+function ensureTaskIds() {
+  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+  let modified = false;
+
+  const updatedTasks = tasks.map(task => {
+    if (!task.id) {
+      task.id = Date.now() + Math.random();
+      modified = true;
+    }
+    return task;
+  });
+
+  if (modified) {
+    localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+  }
+}
 
 // Request Notification Permission
 function requestNotificationPermission() {
@@ -14,76 +33,90 @@ function requestNotificationPermission() {
   }
 }
 
-// Task Creation Handler
-function addTaskHandler(e) {
+// Handle Task Form Submission
+let currentTaskId = null;
+
+document.getElementById('taskForm').addEventListener('submit', (e) => {
   e.preventDefault();
 
-  const title = document.getElementById('taskTitle').value;
-  const description = document.getElementById('taskDescription').value;
+  if (currentTaskId) {
+    updateTask(currentTaskId);
+  } else {
+    addNewTask();
+  }
+});
+
+// Add New Task
+function addNewTask() {
+  const task = getFormData();
+  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+  tasks.push(task);
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+
+  renderTaskList();
+  scheduleReminder(task);
+  resetForm();
+}
+
+// Get Data from Form
+function getFormData() {
+  const title = document.getElementById('taskTitle').value.trim();
+  const description = document.getElementById('taskDescription').value.trim();
   const priority = document.getElementById('taskPriority').value;
-  const tagsInput = document.getElementById('taskTags').value;
+  const tagsInput = document.getElementById('taskTags').value.trim();
   const reminderDate = document.getElementById('taskReminderDate').value;
   const reminderTime = document.getElementById('taskReminderTime').value;
   const reminderSound = document.getElementById('taskReminderSound').value;
 
-  if (title.trim() === '') {
+  if (!title) {
     alert('Task title is required!');
-    return;
+    throw new Error('Task title is required');
   }
 
-  const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()) : [];
-
-  const task = { 
-    title, 
-    description, 
-    priority, 
-    tags, 
-    reminderDate, 
+  return {
+    id: Date.now() + Math.random(),
+    title,
+    description,
+    priority,
+    tags: tagsInput.split(',').map(tag => tag.trim()),
+    reminderDate,
     reminderTime,
     reminderSound,
     completed: false,
     reminderTriggered: false
   };
-
-  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-  tasks.push(task);
-  localStorage.setItem('tasks', JSON.stringify(tasks));
-
-  renderTaskList();
-  scheduleReminder(task);  // Schedule the reminder
-  document.getElementById('taskForm').reset();
 }
 
-// Attach the add task handler on page load
-document.getElementById('taskForm').addEventListener('submit', addTaskHandler);
-
-// Render all tasks
+// Render All Tasks
 function renderTaskList() {
   const taskList = document.getElementById('taskList');
   taskList.innerHTML = '';
 
   const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-  tasks.forEach((task, index) => addTaskToDOM(task, index));
+  const priorityOrder = { high: 1, medium: 2, low: 3 };
+
+  tasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  tasks.forEach(task => addTaskToDOM(task));
 }
 
-// Add task to DOM
-function addTaskToDOM(task, index) {
+// Add Task to DOM
+function addTaskToDOM(task) {
   const taskList = document.getElementById('taskList');
-
   const taskDiv = document.createElement('div');
   taskDiv.className = `task priority-${task.priority}`;
-  taskDiv.dataset.index = index;  // Store index in data attribute
+  taskDiv.dataset.id = task.id;
 
-  const tagsHTML = task.tags && task.tags.length 
-    ? `<div class="tags">${task.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>` 
+  const tagsHTML = task.tags.length
+    ? `<div class="tags">${task.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>`
     : '';
 
-  const reminderHTML = task.reminderDate && task.reminderTime 
+  const reminderHTML = task.reminderDate && task.reminderTime
     ? `<p class="reminder">Reminder: ${task.reminderDate} at ${task.reminderTime}</p>`
     : '';
 
   taskDiv.innerHTML = `
-    <input type="checkbox" ${task.completed ? 'checked' : ''}>
+    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
     <h3 class="${task.completed ? 'completed' : ''}">${task.title}</h3>
     <p class="${task.completed ? 'completed' : ''}">${task.description}</p>
     <span class="priority-label">${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority</span>
@@ -97,37 +130,25 @@ function addTaskToDOM(task, index) {
 }
 
 // Event Delegation for Edit, Delete, and Checkbox
-document.getElementById('taskList').addEventListener('click', function(e) {
-  const index = e.target.closest('.task')?.dataset.index;
+document.getElementById('taskList').addEventListener('click', (e) => {
+  const taskDiv = e.target.closest('.task');
+  if (!taskDiv) return;
 
-  if (!index) return;
+  const taskId = Number(taskDiv.dataset.id);
 
   if (e.target.classList.contains('edit-btn')) {
-    editTask(index);
+    loadTaskForEditing(taskId);
   } else if (e.target.classList.contains('delete-btn')) {
-    deleteTask(index);
-  } else if (e.target.type === 'checkbox') {
-    toggleTaskCompletion(index);
+    deleteTask(taskId);
+  } else if (e.target.classList.contains('task-checkbox')) {
+    toggleTaskCompletion(taskId);
   }
 });
 
-// Toggle Task Completion
-function toggleTaskCompletion(index) {
+// Load Task for Editing
+function loadTaskForEditing(taskId) {
   const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-  tasks[index].completed = !tasks[index].completed;
-
-  localStorage.setItem('tasks', JSON.stringify(tasks));
-  renderTaskList();
-
-  if (tasks[index].completed) {
-    showNotification(`Task Completed: ${tasks[index].title}`, 'Great job! You’ve completed a task.', tasks[index].reminderSound);
-  }
-}
-
-// Edit Task
-function editTask(index) {
-  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-  const task = tasks[index];
+  const task = tasks.find(t => t.id === taskId);
 
   document.getElementById('taskTitle').value = task.title;
   document.getElementById('taskDescription').value = task.description;
@@ -139,55 +160,62 @@ function editTask(index) {
 
   const submitButton = document.querySelector('#taskForm button');
   submitButton.textContent = 'Update Task';
+  
+  currentTaskId = taskId;
+}
 
-  const form = document.getElementById('taskForm');
-  form.removeEventListener('submit', addTaskHandler);
+// Update Task
+function updateTask(taskId) {
+  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+  const taskIndex = tasks.findIndex(t => t.id === taskId);
 
-  form.addEventListener('submit', function updateTask(e) {
-    e.preventDefault();
-
-    task.title = document.getElementById('taskTitle').value;
-    task.description = document.getElementById('taskDescription').value;
-    task.priority = document.getElementById('taskPriority').value;
-    task.tags = document.getElementById('taskTags').value.split(',').map(tag => tag.trim());
-    task.reminderDate = document.getElementById('taskReminderDate').value;
-    task.reminderTime = document.getElementById('taskReminderTime').value;
-    task.reminderSound = document.getElementById('taskReminderSound').value;
-    task.reminderTriggered = false;
-
-    tasks[index] = task;
+  if (taskIndex !== -1) {
+    tasks[taskIndex] = { ...tasks[taskIndex], ...getFormData(), id: taskId };
     localStorage.setItem('tasks', JSON.stringify(tasks));
-
-    form.reset();
-    submitButton.textContent = 'Add Task';
     renderTaskList();
+    resetForm();
+  }
+}
 
-    form.removeEventListener('submit', updateTask);
-    form.addEventListener('submit', addTaskHandler);
-  });
+// Reset Form
+function resetForm() {
+  document.getElementById('taskForm').reset();
+  const submitButton = document.querySelector('#taskForm button');
+  submitButton.textContent = 'Add Task';
+  currentTaskId = null;
 }
 
 // Delete Task with Confirmation
-function deleteTask(index) {
-  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-
+function deleteTask(taskId) {
   if (confirm('Are you sure you want to delete this task?')) {
-    const deletedTask = tasks.splice(index, 1)[0];
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    const updatedTasks = tasks.filter(task => task.id !== taskId);
+
+    localStorage.setItem('tasks', JSON.stringify(updatedTasks));
     renderTaskList();
-    showNotification(`Task Deleted: ${deletedTask.title}`, 'A task has been removed from your list.', deletedTask.reminderSound);
   }
 }
 
-// Schedule Reminder in Background using Electron
+// Toggle Task Completion
+function toggleTaskCompletion(taskId) {
+  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+  const task = tasks.find(t => t.id === taskId);
+
+  if (task) {
+    task.completed = !task.completed;
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    renderTaskList();
+  }
+}
+
+// Schedule Reminders with Snooze/Dismiss
 function scheduleReminder(task) {
   if (task.reminderDate && task.reminderTime && !task.completed && !task.reminderTriggered) {
     ipcRenderer.send('schedule-reminder', task);
-    console.log(`Sent reminder to main process for: ${task.title}`);
   }
 }
 
-// Schedule existing reminders on app load
+// Schedule Existing Reminders
 function scheduleExistingReminders() {
   const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
   tasks.forEach(task => {
@@ -197,52 +225,41 @@ function scheduleExistingReminders() {
   });
 }
 
-// Listen for reminders triggered by Electron's main process
+// Handle Reminders with Snooze and Dismiss
 ipcRenderer.on('trigger-reminder', (event, task) => {
-  showNotification(task.title, task.description, task.reminderSound);
-  markReminderTriggered(task.title);
+  const snooze = confirm(`Reminder: ${task.title}\n\n${task.description}\n\nDo you want to snooze? Click 'OK' to snooze for 5 minutes, or 'Cancel' to dismiss.`);
+  
+  if (snooze) {
+    ipcRenderer.send('snooze-reminder', task);
+  } else {
+    completeDismissedTask(task.id);  // Mark task as completed when dismissed
+    ipcRenderer.send('dismiss-reminder', task);
+  }
 });
 
-// Mark reminder as triggered in localStorage
-function markReminderTriggered(taskTitle) {
+// Complete Dismissed Task
+function completeDismissedTask(taskId) {
   const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-  const updatedTasks = tasks.map(task => {
-    if (task.title === taskTitle) {
-      task.reminderTriggered = true;
-    }
-    return task;
-  });
+  const task = tasks.find(t => t.id === taskId);
 
-  localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-  renderTaskList();
-}
-
-// Show Notification with Custom Sound
-function showNotification(title, description, sound) {
-  if (Notification.permission === 'granted') {
-    new Notification(title, { body: description });
+  if (task) {
+    task.completed = true;
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    renderTaskList();
   }
-  playSound(sound);
 }
 
-// Play Sound Based on User Selection
+// Play Custom Sound
 function playSound(soundType) {
   let soundSrc = '';
 
   switch (soundType) {
-    case 'chime':
-      soundSrc = '../assets/sounds/chime.mp3';
-      break;
-    case 'alert':
-      soundSrc = '../assets/sounds/alert.mp3';
-      break;
-    case 'beep':
-      soundSrc = '../assets/sounds/beep.mp3';
-      break;
-    default:
-      soundSrc = '../assets/sounds/default.mp3';
+    case 'chime': soundSrc = '../assets/sounds/chime.mp3'; break;
+    case 'alert': soundSrc = '../assets/sounds/alert.mp3'; break;
+    case 'beep': soundSrc = '../assets/sounds/beep.mp3'; break;
+    default: soundSrc = '../assets/sounds/default.mp3';
   }
 
   const audio = new Audio(soundSrc);
-  audio.play().catch(error => console.error('Error playing sound:', error));
+  audio.play().catch(err => console.error('Error playing sound:', err));
 }
