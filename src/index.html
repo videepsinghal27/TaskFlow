@@ -1,74 +1,158 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>TaskFlow</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-      body { font-family: Arial, sans-serif; padding: 20px; }
-      #taskForm { margin-bottom: 20px; }
-      input[type="text"], textarea, select, input[type="date"], input[type="time"] { width: 100%; margin-bottom: 10px; padding: 8px; }
-      button { padding: 10px 15px; margin-right: 5px; }
-      .task { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Header Section -->
+  <header class="app-header">
+    <img src="../assets/icon.png" alt="TaskFlow Logo" class="app-logo" />
+    <h1 class="app-title">TaskFlow</h1>
+  </header>
 
-      /* Styling for completed tasks */
-      .completed { text-decoration: line-through; color: #888; }
+  <!-- Offline/Network Status -->
+  <div id="offlineStatus" class="offline-indicator" style="display:none;">🔴 Offline Mode</div>
+  <div id="networkStatus" class="network-status">Checking network status...</div>
 
-      /* Priority styles */
-      .priority-high { border-left: 5px solid red; }
-      .priority-medium { border-left: 5px solid orange; }
-      .priority-low { border-left: 5px solid green; }
+  <!-- View Switcher -->
+  <div class="view-switcher">
+    <button id="listViewBtn">List View</button>
+    <button id="boardViewBtn">Board View</button>
+    <button id="calendarViewBtn">Calendar View</button>
+  </div>
 
-      .priority-label { font-weight: bold; padding: 3px 5px; border-radius: 3px; background-color: #f0f0f0; width: fit-content; }
-
-      /* Tag styles */
-      .tags { margin-top: 5px; }
-      .tag { background-color: #e0e0e0; padding: 3px 8px; border-radius: 12px; margin-right: 5px; display: inline-block; font-size: 12px; }
-    </style>
-  </head>
-  <body>
-    <h1>TaskFlow</h1>
-
-    <!-- Filter by Tags -->
-    <label for="filterTags">Filter by Tag:</label>
-    <input type="text" id="filterTags" placeholder="e.g., work, personal" oninput="filterTasksByTag()" />
-
-    <form id="taskForm">
-      <input type="text" id="taskTitle" placeholder="Task Title" required />
-      <textarea id="taskDescription" placeholder="Task Description"></textarea>
-
-      <!-- Priority Dropdown -->
-      <label for="taskPriority">Priority:</label>
-      <select id="taskPriority">
-        <option value="low">Low</option>
-        <option value="medium" selected>Medium</option>
-        <option value="high">High</option>
-      </select>
-
-      <!-- Tags Input -->
-      <label for="taskTags">Tags (comma-separated):</label>
-      <input type="text" id="taskTags" placeholder="e.g., work, personal, urgent" />
-
-      <!-- Reminder Inputs -->
-      <label for="taskReminderDate">Reminder Date:</label>
-      <input type="date" id="taskReminderDate" />
-
-      <label for="taskReminderTime">Reminder Time:</label>
-      <input type="time" id="taskReminderTime" />
-
-      <!-- Reminder Sound Selection -->
-      <label for="taskReminderSound">Reminder Sound:</label>
-      <select id="taskReminderSound">
-        <option value="default">Default</option>
-        <option value="chime">Chime</option>
-        <option value="alert">Alert</option>
-        <option value="beep">Beep</option>
-      </select>
-
-      <button type="submit">Add Task</button>
-    </form>
-
+  <!-- Container for List View (default visible) -->
+  <div id="listView" class="view-container">
+    <!-- Existing task list goes here -->
     <div id="taskList"></div>
+  </div>
 
-    <script src="renderer.js"></script>
-  </body>
+  <!-- Container for Board (Kanban) View -->
+  <div id="boardView" class="view-container" style="display: none;">
+    <!-- Example columns: you may customize columns as needed -->
+    <div class="board-column" id="todoColumn">
+      <h2>To Do</h2>
+      <div class="column-tasks" id="todoTasks"></div>
+    </div>
+    <div class="board-column" id="inProgressColumn">
+      <h2>In Progress</h2>
+      <div class="column-tasks" id="inProgressTasks"></div>
+    </div>
+    <div class="board-column" id="doneColumn">
+      <h2>Done</h2>
+      <div class="column-tasks" id="doneTasks"></div>
+    </div>
+  </div>
+  
+  <!-- Container for Calendar View -->
+  <div id="calendarView" class="view-container" style="display: none;">
+    <!-- A basic calendar grid placeholder -->
+    <div id="calendarGrid">
+      <!-- For now, you can add placeholder cells. Later, you can integrate a calendar library -->
+      <div class="calendar-cell">1</div>
+      <div class="calendar-cell">2</div>
+      <div class="calendar-cell">3</div>
+      <!-- etc. -->
+    </div>
+  </div>
+
+  <!-- Theme Toggle Switch -->
+  <div class="theme-toggle">
+    <label class="switch">
+      <input type="checkbox" id="themeToggle" />
+      <span class="slider round"></span>
+    </label>
+    <span class="toggle-label">Dark Mode</span>
+  </div>
+
+  <!-- Filter Tasks by Tags -->
+  <input
+    type="text"
+    id="filterTags"
+    placeholder="Filter tasks by tag (e.g., work, personal)"
+    oninput="filterTasksByTag()"
+  />
+
+  <!-- Task Form -->
+  <form id="taskForm">
+    <input type="text" id="taskTitle" placeholder="Task Title" required />
+    <textarea id="taskDescription" placeholder="Task Description"></textarea>
+
+    <label for="taskPriority">Priority:</label>
+    <select id="taskPriority">
+      <option value="low">Low</option>
+      <option value="medium" selected>Medium</option>
+      <option value="high">High</option>
+    </select>
+
+    <label for="taskTags">Tags (comma-separated):</label>
+    <input type="text" id="taskTags" placeholder="e.g., work, personal, urgent" />
+
+    <label for="taskReminderDate">Reminder Date:</label>
+    <input type="date" id="taskReminderDate" />
+
+    <label for="taskReminderTime">Reminder Time:</label>
+    <input type="time" id="taskReminderTime" />
+
+    <label for="taskReminderSound">Reminder Sound:</label>
+    <select id="taskReminderSound">
+      <option value="default">Default</option>
+      <option value="chime">Chime</option>
+      <option value="alert">Alert</option>
+      <option value="beep">Beep</option>
+    </select>
+
+    <button type="submit">Add Task</button>
+  </form>
+
+  <!-- Task List -->
+  <div id="taskList"></div>
+
+  <!-- Footer Section -->
+  <footer class="app-footer">
+    <p>&copy; <span id="currentYear"></span> TaskFlow. All rights reserved.</p>
+    <nav class="footer-nav">
+      <a href="#" class="footer-link">Home</a>
+      <a href="#" class="footer-link">About</a>
+      <a href="#" class="footer-link">Contact</a>
+    </nav>
+  </footer>
+
+  <script src="renderer.js"></script>
+  <script>
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+    // Handle offline/online status
+    function updateNetworkStatus() {
+      const offlineStatus = document.getElementById('offlineStatus');
+      const networkStatus = document.getElementById('networkStatus');
+      if (navigator.onLine) {
+        offlineStatus.style.display = 'none';
+        networkStatus.textContent = '🟢 Online - Syncing enabled';
+      } else {
+        offlineStatus.style.display = 'block';
+        networkStatus.textContent = '🔴 Offline - Changes will sync when back online';
+      }
+    }
+
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    updateNetworkStatus();
+
+    // Filter tasks by tag (basic implementation)
+    function filterTasksByTag() {
+      const filter = document.getElementById('filterTags').value.toLowerCase();
+      const tasks = document.querySelectorAll('.task');
+      tasks.forEach(task => {
+        const tags = task.querySelectorAll('.tag');
+        const tagText = Array.from(tags).map(t => t.textContent.toLowerCase());
+        task.style.display = tagText.some(tag => tag.includes(filter)) ? 'block' : 'none';
+      });
+    }
+  </script>
+</body>
 </html>
