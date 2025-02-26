@@ -1,37 +1,539 @@
-/* General Modal Styles */
-.reminder-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
+/* Light Theme Variables */
+:root {
+    --background-color: #f4f4f4;
+    --text-color: #2c3e50;
+    --primary-color: #27ae60;
+    --secondary-color: #2c3e50;
+    --card-background: white;
+    --border-color: #ccc;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Theme Variables */
+[data-theme="dark"] {
+    --background-color: #1e1e1e;
+    --text-color: #ecf0f1;
+    --primary-color: #2ecc71;
+    --secondary-color: #34495e;
+    --card-background: #2c3e50;
+    --border-color: #34495e;
+    --shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+/* General Body and Layout Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 20px;
+    background-color: var(--background-color);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    color: var(--text-color);
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+/* Header Styling */
+.app-header {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
-  }
-  
-  .modal-content {
-    background-color: white;
+    background-color: var(--secondary-color);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    margin-bottom: 20px;
+}
+
+.app-logo {
+    width: 50px;
+    height: 50px;
+    margin-right: 15px;
+}
+
+.app-title {
+    display: block;
+
+    color: var(--text-color);
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+    user-select: none;
+}
+
+/* Task Form Styling */
+#taskForm {
+    margin-bottom: 20px;
+    background-color: var(--card-background);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+#taskForm label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: block;
+    font-size: 15px;
+}
+
+input[type="text"], textarea, select, input[type="date"], input[type="time"] {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box;
+    background-color: var(--card-background);
+    color: var(--text-color);
+    transition: border-color 0.3s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+input::placeholder, textarea::placeholder {
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+/* Button Styling */
+button {
+    padding: 12px 25px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover,
+button:focus {
+    background-color: #219150;
+    transform: scale(1.05);
+    outline: none;
+}
+
+/* Task List Styling */
+.task {
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    background-color: var(--card-background);
+    box-shadow: 0 3px 6px var(--shadow-color);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.task:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px var(--shadow-color);
+    cursor: pointer;
+}
+
+/* Priority Colors */
+.priority-high {
+    border-left: 6px solid #e74c3c;
+}
+
+.priority-medium {
+    border-left: 6px solid #f1c40f;
+}
+
+.priority-low {
+    border-left: 6px solid #2ecc71;
+}
+
+/* Checkbox Styling */
+.task-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Task Content Styling */
+.task h3 {
+    font-size: 22px;
+    margin-bottom: 5px;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.task p {
+    font-size: 15px;
+    color: var(--text-color);
+    margin: 0;
+    transition: color 0.3s ease;
+}
+
+.completed {
+    text-decoration: line-through;
+    color: #95a5a6;
+}
+
+/* Priority Label Styling */
+.priority-label {
+    font-weight: bold;
+    padding: 5px 12px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.05);
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 13px;
+    color: var(--text-color);
+}
+
+/* Tag Styling */
+.tags {
+    display: flex;
+    gap: 8px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+}
+
+.tag {
+    background-color: #e0e0e0;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--text-color);
+}
+
+/* Reminder Styling */
+.reminder {
+    color: #e67e22;
+    font-weight: 600;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+/* Action Button Styling */
+.task-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.edit-btn, .delete-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    max-width: 120px;
+    text-align: center;
+    flex: 0 0 auto;
+}
+
+.edit-btn {
+    background-color: #3498db;
+    color: white;
+}
+
+.edit-btn:hover,
+.edit-btn:focus {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}
+
+.delete-btn {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.delete-btn:hover,
+.delete-btn:focus {
+    background-color: #c0392b;
+    transform: translateY(-2px);
+}
+
+/* Footer Styling */
+.app-footer {
+    margin-top: auto;
+    background-color: #ffffff;
+    color: var(--text-color);
     padding: 20px;
     border-radius: 8px;
     text-align: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-  
-  .modal-content h3 {
-    margin-bottom: 10px;
-  }
-  
-  .modal-content p {
-    margin: 5px 0;
-  }
-  
-  .modal-content button {
-    margin: 10px;
-    padding: 10px 20px;
-    font-size: 16px;
+    font-size: 14px;
+    box-shadow: 0 -2px 4px var(--shadow-color);
+}
+
+[data-theme="dark"] .app-footer {
+    background-color: var(--secondary-color);
+    color: #ecf0f1;
+}
+
+.footer-nav {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.footer-nav a {
+    color: var(--text-color);
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.footer-nav a:hover {
+    text-decoration: underline;
+    color: var(--primary-color);
+}
+
+/* Toggle Switch Styling */
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 25px;
+    margin-right: 10px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
     cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    border-radius: 34px;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 19px; width: 19px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(24px);
+}
+
+.toggle-label {
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+/* Offline Indicator */
+.offline-indicator {
+    display: none;
+    text-align: center;
+    background-color: #e74c3c;
+    color: #fff;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Network Status */
+.network-status {
+    text-align: center;
+    font-weight: bold;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    color: #fff;
+    background-color: #333;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+    body {
+        font-size: 14px;
+    }
+
+    .app-title {
+    display: block;
+
+        font-size: 24px;
+    }
+
+    .task {
+        padding: 15px;
+    }
+
+    button {
+        padding: 10px 20px;
+    }
+
+    .theme-toggle {
+        justify-content: center;
+    }
+}
+
+/* View Switcher Styling */
+.view-switcher {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 15px 0;
   }
   
+  .view-switcher button {
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    transition: background-color 0.3s ease;
+  }
+  
+  .view-switcher button:hover {
+    background-color: #219150;
+  }
+  
+  /* Common View Container Styling */
+  .view-container {
+    margin: 10px 0;
+  }
+  
+  /* Board View (Kanban) Styling */
+  #boardView {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  
+  .board-column {
+    flex: 1;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+  }
+  
+  .board-column h2 {
+    text-align: center;
+    margin-top: 0;
+  }
+  
+  .column-tasks {
+    min-height: 200px; /* Adjust as needed */
+  }
+  
+  /* Calendar View Styling */
+  #calendarGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* 7 days a week */
+    gap: 5px;
+  }
+  
+  .calendar-cell {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+    text-align: center;
+    min-height: 50px;
+  }
+/* --- Board View (Kanban) Styling --- */
+.board-task {
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    margin: 5px;
+    padding: 5px;
+    border-radius: 4px;
+  }
+  
+  #boardView {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  
+  .board-column {
+    flex: 1;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+  }
+  
+  .board-column h2 {
+    text-align: center;
+    margin-top: 0;
+  }
+  
+  .column-tasks {
+    min-height: 200px; /* Adjust as needed */
+  }
+  
+  /* --- Calendar View Styling --- */
+  #calendarGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* 7 days a week */
+    gap: 5px;
+    margin-top: 10px;
+  }
+  
+  .calendar-cell {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 5px;
+    text-align: center;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .cell-date {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .calendar-task {
+    background-color: #f0f0f0;
+    border: 1px solid var(--border-color);
+    padding: 2px 4px;
+    margin: 2px 0;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+    
