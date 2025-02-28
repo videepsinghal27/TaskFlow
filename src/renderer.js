@@ -70,18 +70,20 @@ function initDB() {
 }
 
 // Save task to IndexedDB
-function saveTaskToDB(task) {
-  async function ensureIndexedDBInitialized() {
-    if (!indexedDBInstance) {
-      await initDB();
-    }
-  }  
+async function saveTaskToDB(task) {
+  if (!indexedDBInstance) {
+    console.error("❌ IndexedDB is not initialized.");
+    return;
+  }
+
+  console.log(`📥 BEFORE Saving Task: ${task.id} → ${task.status}`);
 
   try {
     const transaction = indexedDBInstance.transaction('tasks', 'readwrite');
     const store = transaction.objectStore('tasks');
-    store.put(task);
-    console.log("✅ Task saved to IndexedDB:", task);
+    await store.put(task);
+
+    console.log(`✅ AFTER Saving Task: ${task.id} → ${task.status}`);
   } catch (error) {
     console.error("❌ Error saving task to IndexedDB:", error);
   }
@@ -189,9 +191,61 @@ window.onload = async () => {
 
   // Display network status
   updateNetworkStatus();
+  enableDragAndDrop();
   window.addEventListener('online', updateNetworkStatus);
   window.addEventListener('offline', updateNetworkStatus);
+
+  document.getElementById("statusFilter").addEventListener("change", populateBoardView);
+  document.getElementById("priorityFilter").addEventListener("change", populateBoardView);
+  document.getElementById("tagFilter").addEventListener("input", populateBoardView);
+
 };
+
+// Update Task Status (Firestore + IndexedDB)
+let updatingTasks = new Set(); // ✅ Prevents multiple updates at once
+
+async function updateTaskStatus(taskId, newStatus) {
+  let task = await getTaskById(taskId);
+  if (!task) {
+    console.warn(`⚠️ Task ${taskId} not found in IndexedDB`);
+    return;
+  }
+
+  console.log(`🟢 BEFORE updateTaskStatus: Task ${taskId} → ${task.status} | New Status: ${newStatus}`);
+
+  // ✅ FORCE status update
+  task.status = newStatus;
+
+  // ✅ Save to IndexedDB
+  await saveTaskToDB(task);
+
+  // ✅ Confirm IndexedDB saved correctly
+  let updatedTask = await getTaskById(taskId);
+  console.log(`✅ AFTER updateTaskStatus: IndexedDB Task ${updatedTask.id} → ${updatedTask.status}`);
+
+  if (navigator.onLine) {
+    try {
+      await updateDoc(doc(firestoreDB, 'tasks', taskId), { status: newStatus });
+      console.log(`✅ Firestore Updated: Task ${taskId} → ${newStatus}`);
+
+      // 🛠 Fetch the Firestore task again to avoid IndexedDB mismatches
+      const updatedTaskRef = doc(firestoreDB, 'tasks', taskId);
+      const updatedTaskSnap = await getDoc(updatedTaskRef);
+      if (updatedTaskSnap.exists()) {
+        let firestoreTask = { id: updatedTaskSnap.id, ...updatedTaskSnap.data() };
+
+        // ✅ Save the Firestore version again to IndexedDB (to avoid mismatches)
+        await saveTaskToDB(firestoreTask);
+        console.log(`✅ IndexedDB Reconfirmed from Firestore: Task ${firestoreTask.id} → ${firestoreTask.status}`);
+      }
+    } catch (error) {
+      console.error(`❌ Firestore update failed: Task ${taskId}`, error);
+    }
+  }
+
+  // ✅ Refresh board
+  await populateBoardView();
+}
 
 // --- View Switching Functionality ---
 // Call this function when a user selects a view.
@@ -219,41 +273,102 @@ document.getElementById('listViewBtn').addEventListener('click', () => switchVie
 document.getElementById('boardViewBtn').addEventListener('click', () => switchView('board'));
 document.getElementById('calendarViewBtn').addEventListener('click', () => switchView('calendar'));
 
-// Optional placeholder functions to populate board and calendar views
-async function populateBoardView() {
-  try {
-    // Get tasks from local store
-    const tasks = await getAllTasks();
-    
-    // Get container elements (make sure these IDs match what you have in your HTML)
-    const todoContainer = document.getElementById('todoTasks');
-    const inProgressContainer = document.getElementById('inProgressTasks');
-    const doneContainer = document.getElementById('doneTasks');
-    
-    // Clear any existing content
-    todoContainer.innerHTML = "";
-    inProgressContainer.innerHTML = "";
-    doneContainer.innerHTML = "";
-    
-    // For this example, we’ll assume tasks that are not completed go into "To Do" 
-    // and tasks that are completed go into "Done".
-    // (You could add logic for "In Progress" if you later extend your task model.)
-    tasks.forEach(task => {
-      // Create a simple HTML element for the task
-      const taskHTML = `<div class="board-task" data-id="${task.id}">
-          <h4>${task.title}</h4>
-          <p>${task.description}</p>
-        </div>`;
-      if (task.completed) {
-        doneContainer.innerHTML += taskHTML;
-      } else {
-        todoContainer.innerHTML += taskHTML;
+// Enable Drag-and-Drop for Kanban Board
+function enableDragAndDrop() {
+  console.log("🔄 Initializing Drag-and-Drop...");
+
+  document.querySelectorAll('.column-tasks').forEach(column => {
+    if (!column) {
+      console.error("❌ Column not found:", column);
+      return;
+    }
+
+    console.log(`✅ Enabling Drag-and-Drop for ${column.id}`);
+
+    new Sortable(column, {
+      group: 'tasks',
+      animation: 150,
+      onEnd: async (event) => {
+        console.log(`🎯 Drag Ended: Task ${event.item.dataset.id}`);
+
+        const taskId = event.item.dataset.id;
+        if (!taskId) return;
+
+        const columnId = event.to.id; // Gets the target column ID
+        let newStatus = columnId.replace('Tasks', '').toLowerCase(); // Converts to lowercase
+
+        // 🛠 Fix Status Mapping to Match Expected Cases
+        if (newStatus === "inprogress") newStatus = "inProgress";  // Fix camel case issue
+
+        if (!["todo", "inProgress", "done"].includes(newStatus)) {
+          console.error(`❌ Invalid status detected: ${newStatus}`);
+          return;
+        }
+
+        console.log(`🎯 Dragged Task ${taskId} → New Status: ${newStatus}`);
+
+        // ✅ Delay update to prevent race conditions
+        setTimeout(() => {
+          updateTaskStatus(taskId, newStatus);
+        }, 100);
       }
     });
-    console.log("Board view populated.");
-  } catch (err) {
-    console.error("Error populating board view:", err);
+  });
+
+  console.log("✅ Drag-and-Drop initialized successfully.");
+}
+
+// Optional placeholder functions to populate board and calendar views
+async function populateBoardView() {
+  console.log("🖥 Populating board view with tasks...");
+
+  const tasks = await getAllTasks();
+  if (!tasks || tasks.length === 0) {
+    console.warn('⚠️ No tasks found.');
+    return;
   }
+
+  // ✅ Get filter values
+  const statusFilter = document.getElementById("statusFilter").value;
+  const priorityFilter = document.getElementById("priorityFilter").value;
+  const tagFilter = document.getElementById("tagFilter").value.toLowerCase().trim();
+
+  const todoContainer = document.getElementById('todoTasks');
+  const inProgressContainer = document.getElementById('inProgressTasks');
+  const doneContainer = document.getElementById('doneTasks');
+
+  // ✅ Ensure all columns are cleared before repopulating
+  todoContainer.innerHTML = "";
+  inProgressContainer.innerHTML = "";
+  doneContainer.innerHTML = "";
+
+  tasks.forEach(task => {
+    // ✅ Apply Filters: Skip tasks that don't match selected filters
+    if (
+      (statusFilter !== "all" && task.status !== statusFilter) ||
+      (priorityFilter !== "all" && task.priority !== priorityFilter) ||
+      (tagFilter && !task.tags.some(tag => tag.toLowerCase().includes(tagFilter)))
+    ) {
+      return; // Skip task if it doesn't match filters
+    }
+
+    console.log(`📝 Task ${task.id}: ${task.title} → ${task.status}`);
+
+    const taskDiv = document.createElement("div");
+    taskDiv.className = "board-task";
+    taskDiv.dataset.id = task.id;
+    taskDiv.innerHTML = `<h4>${task.title}</h4><p>${task.description}</p>`;
+
+    if (task.status === "todo") {
+      todoContainer.appendChild(taskDiv);
+    } else if (task.status === "inProgress") {
+      inProgressContainer.appendChild(taskDiv);
+    } else if (task.status === "done") {
+      doneContainer.appendChild(taskDiv);
+    }
+  });
+
+  console.log("✅ Board view populated.");
 }
 
 async function populateCalendarView() {
@@ -458,37 +573,38 @@ async function renderTaskList() {
 }
 
 async function syncTasks() {
-  console.log("syncTasks() called");
-  if (!navigator.onLine) return; // Only sync when online
-  
-  console.log("Attempting to sync local tasks with Firestore...");
+  console.log("🔄 syncTasks() called");
+
+  if (!navigator.onLine) {
+    console.warn("❌ Offline - Cannot sync tasks.");
+    return;
+  }
+
+  console.log("📤 Syncing local tasks with Firestore...");
 
   try {
-    const transaction = indexedDBInstance.transaction('tasks', 'readonly');
-    const store = transaction.objectStore('tasks');
-    const request = store.getAll();
+    const querySnapshot = await getDocs(collection(firestoreDB, 'tasks'));
+    const firestoreTasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    console.log(`📥 Fetched ${firestoreTasks.length} tasks from Firestore.`);
 
-    request.onsuccess = async () => {
-      const localTasks = request.result;
-      console.log("Local tasks found for syncing:", localTasks.length, localTasks);
+    for (const firestoreTask of firestoreTasks) {
+      console.log(`📥 Checking Firestore Task: ${firestoreTask.id} → ${firestoreTask.status}`);
 
-      // Loop over each task and try to sync to Firestore
-      for (const task of localTasks) {
-        try {
-          console.log(`Syncing task: ${task.id}`);
-          await setDoc(doc(firestoreDB, 'tasks', task.id.toString()), task, { merge: true });
-          console.log(`✅ Task ${task.id} synced successfully.`);
-        } catch (error) {
-          console.error(`❌ Error syncing task ${task.id}:`, error);
-        }
+      let localTask = await getTaskById(firestoreTask.id);
+
+      // 🚫 Ignore outdated updates
+      if (localTask && localTask.lastModified > (firestoreTask.lastModified || 0)) {
+        console.warn(`🚫 Skipping Firestore update for Task ${firestoreTask.id} (Local task is newer).`);
+        continue;
       }
-    };
 
-    request.onerror = () => {
-      console.error("❌ Error reading tasks from IndexedDB for sync:", request.error);
-    };
+      console.log(`🔄 Updating IndexedDB with Firestore Task: ${firestoreTask.id} → ${firestoreTask.status}`);
+      await saveTaskToDB(firestoreTask);
+    }
+
+    await populateBoardView();
   } catch (err) {
-    console.error("Transaction error in syncTasks:", err);
+    console.error("❌ Transaction error in syncTasks:", err);
   }
 }
 

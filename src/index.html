@@ -33,6 +33,26 @@
 
   <!-- Container for Board (Kanban) View -->
   <div id="boardView" class="view-container" style="display: none;">
+    <div class="board-filters">
+      <label for="statusFilter">Filter by Status:</label>
+      <select id="statusFilter">
+        <option value="all">All</option>
+        <option value="todo">To Do</option>
+        <option value="inProgress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+    
+      <label for="priorityFilter">Filter by Priority:</label>
+      <select id="priorityFilter">
+        <option value="all">All</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+    
+      <label for="tagFilter">Filter by Tag:</label>
+      <input type="text" id="tagFilter" placeholder="Enter tag (e.g., urgent)" />
+    </div>    
     <!-- Example columns: you may customize columns as needed -->
     <div class="board-column" id="todoColumn">
       <h2>To Do</h2>
