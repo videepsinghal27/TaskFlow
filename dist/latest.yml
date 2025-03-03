@@ -1,0 +1,8 @@
+version: 1.0.0
+files:
+  - url: TaskFlow-Setup-1.0.0.exe
+    sha512: QlbKSCFBDbbVAUBUO96sKoCvTEgw2Tu6aHcBs0V7/D+O4WjnoSaW87CdNA3sS+Z1jVvuSZ5ZIJCV+bjTy8Sxcw==
+    size: 559799003
+path: TaskFlow-Setup-1.0.0.exe
+sha512: QlbKSCFBDbbVAUBUO96sKoCvTEgw2Tu6aHcBs0V7/D+O4WjnoSaW87CdNA3sS+Z1jVvuSZ5ZIJCV+bjTy8Sxcw==
+releaseDate: '2025-03-03T07:58:10.490Z'
