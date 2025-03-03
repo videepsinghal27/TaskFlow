@@ -1,1 +1,10 @@
-node_modules/ 
+# Ignore node modules
+node_modules/
+
+# Ignore build output (binaries and large files)
+dist/*
+
+# Allow only necessary update files for Electron auto-updater
+!dist/latest.yml
+!dist/*.blockmap
+!dist/*.json
