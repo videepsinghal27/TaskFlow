@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "build": "electron-builder"
   },
   "repository": {
     "type": "git",
@@ -20,10 +21,62 @@
   },
   "homepage": "https://github.com/videepsinghal27/TaskFlow#readme",
   "devDependencies": {
-    "electron": "^34.1.1"
+    "@babel/core": "^7.26.9",
+    "@babel/preset-env": "^7.26.9",
+    "babel-jest": "^29.7.0",
+    "electron": "^34.1.1",
+    "electron-builder": "^25.1.8",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^26.0.0"
   },
   "dependencies": {
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "electron-updater": "^6.3.9",
+    "express": "^4.21.2",
+    "file-saver": "^2.0.5",
     "firebase": "^11.3.1",
+    "jspdf": "^3.0.0",
+    "nodemailer": "^6.10.0",
     "sortablejs": "^1.15.6"
+  },
+  "build": {
+    "appId": "com.taskflow.app",
+    "productName": "TaskFlow",
+    "copyright": "© 2025 TaskFlow",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "dist/**/*",
+      "main.js",
+      "package.json",
+      "src/**/*"
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "videepsinghal27",
+      "repo": "TaskFlow"
+    },
+    "asarUnpack": [
+      "src/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icons/win-icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icons/mac-icon.icns",
+      "hardenedRuntime": false
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/icons/linux-icon.png"
+    }
   }
 }

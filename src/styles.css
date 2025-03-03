@@ -34,16 +34,13 @@ body {
     font-size: 16px;
 }
 
-/* Header Styling */
+/* === Header Styling === */
 .app-header {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     background-color: var(--secondary-color);
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px var(--shadow-color);
-    margin-bottom: 20px;
+    padding: 15px 20px;
 }
 
 .app-logo {
@@ -52,14 +49,146 @@ body {
     margin-right: 15px;
 }
 
+/* === Ensure TaskFlow title is always visible === */
 .app-title {
-    display: block;
-
-    color: var(--text-color);
+    color: var(--primary-color);  /* Ensures visibility */
     font-size: 32px;
     font-weight: 700;
     margin: 0;
     user-select: none;
+    text-shadow: 1px 1px 3px var(--shadow-color); /* Slight shadow for contrast */
+}
+
+/* For Dark Mode */
+[data-theme="dark"] .app-title {
+    color: #2ecc71; /* Bright green in dark mode */
+}
+
+/* === Header Navigation Styling === */
+.header-nav {
+    margin-left: auto;
+    display: flex;
+    gap: 15px;
+}
+
+.header-nav a {
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: bold;
+    padding: 10px;
+    transition: color 0.3s ease;
+}
+
+.header-nav a:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+/* === Sidebar Navigation Styling === */
+.sidebar {
+    position: fixed;
+    left: -220px; /* Hide sidebar by default */
+    top: 0;
+    width: 220px;
+    height: 100vh;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 0 5px var(--shadow-color);
+    z-index: 1000;
+    transition: left 0.3s ease-in-out;
+}
+
+/* Show sidebar when "open" class is applied */
+.sidebar.open {
+    left: 0;
+}
+
+/* Ensure content doesn't overlap with sidebar */
+body {
+    margin-left: 230px; /* Adjust based on sidebar width */
+}
+
+/* Sidebar Navigation Links (Make text visible) */
+.sidebar h3 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    color: var(--primary-color); /* Highlight heading */
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar li {
+    margin: 10px 0;
+}
+
+.sidebar a {
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    display: block;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background 0.3s ease, color 0.3s ease;
+    color: white; /* Default for visibility */
+}
+
+/* Change color for dark mode */
+[data-theme="dark"] .sidebar a {
+    color: #ecf0f1;
+}
+
+/* Hover Effect */
+.sidebar a:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* === Mobile View Fix === */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 180px;
+        left: -180px; /* Stay hidden until toggled */
+    }
+}
+
+.error-message {
+    color: #e74c3c;
+    font-size: 14px;
+    margin-top: 5px;
+    display: block;
+}
+
+.success-message {
+    color: #27ae60;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* === Menu Toggle Button (☰) === */
+.menu-btn {
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 1100;
+    border-radius: 5px;
+}
+
+.menu-btn:hover {
+    background-color: #219150;
 }
 
 /* Task Form Styling */
@@ -434,27 +563,128 @@ input:checked + .slider:before {
   /* Board View (Kanban) Styling */
   #boardView {
     display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+}
+
+.board-controls {
+    display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 10px;
-  }
-  
-  .board-column {
-    flex: 1;
-    background-color: var(--card-background);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
     padding: 10px;
+    background: var(--card-background);
+    border-radius: 8px;
     box-shadow: 0 2px 4px var(--shadow-color);
-  }
+}
+
+.search-container input, 
+.board-filters select, 
+.board-filters input {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 14px;
+    background-color: var(--card-background);
+    color: var(--text-color);
+}
+
+/* === Kanban Board Styling === */
+.board-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    align-items: flex-start;
+}
   
-  .board-column h2 {
+/* === Columns should be evenly spaced === */
+.board-column {
+    flex: 1;
+    min-height: 400px;
+    background: var(--card-background);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    display: flex;
+    flex-direction: column;
+}
+  
+/* === Column Headings === */
+.board-column h2 {
     text-align: center;
-    margin-top: 0;
-  }
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-color);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+/* === Task Card Styling === */
+.board-task {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px var(--shadow-color);
+    margin-bottom: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.board-task:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 10px var(--shadow-color);
+}
+
+/* === Task Title & Description === */
+.board-task h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.board-task p {
+    font-size: 14px;
+    color: #666;
+    margin: 0;
+}
   
-  .column-tasks {
-    min-height: 200px; /* Adjust as needed */
-  }
+/* === Ensure tasks do not overflow column === */
+.column-tasks {
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: 350px;
+    padding-right: 5px;
+}
+
+/* === Scrollbar Styling for Smooth Scrolling === */
+.column-tasks::-webkit-scrollbar {
+    width: 6px;
+}
+
+.column-tasks::-webkit-scrollbar-thumb {
+    background-color: var(--primary-color);
+    border-radius: 10px;
+}
+/* === Responsive Layout === */
+@media (max-width: 768px) {
+    .board-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .board-controls {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .board-column {
+        min-height: auto;
+    }
+}
   
   /* Calendar View Styling */
   #calendarGrid {
@@ -471,57 +701,6 @@ input:checked + .slider:before {
     text-align: center;
     min-height: 50px;
   }
-/* --- Board View (Kanban) Styling --- */
-.board-task {
-    background-color: #fff;
-    border: 1px solid var(--border-color);
-    margin: 5px;
-    padding: 5px;
-    border-radius: 4px;
-  }
-  
-  #boardView {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-  }
-  
-  .board-column {
-    flex: 1;
-    background-color: var(--card-background);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: 0 2px 4px var(--shadow-color);
-  }
-  
-  .board-column h2 {
-    text-align: center;
-    margin-top: 0;
-  }
-  
-  .column-tasks {
-    min-height: 200px; /* Adjust as needed */
-  }
-  
-  /* --- Calendar View Styling --- */
-  #calendarGrid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr); /* 7 days a week */
-    gap: 5px;
-    margin-top: 10px;
-  }
-  
-  .calendar-cell {
-    background-color: var(--card-background);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 5px;
-    text-align: center;
-    min-height: 80px;
-    display: flex;
-    flex-direction: column;
-  }
   
   .cell-date {
     font-weight: bold;
@@ -536,4 +715,229 @@ input:checked + .slider:before {
     border-radius: 3px;
     font-size: 12px;
   }
-    
+
+/* === About Page Styling === */
+.about-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: var(--card-background);
+    box-shadow: 0 4px 6px var(--shadow-color);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.about-content h2, .about-content h3 {
+    color: var(--primary-color);
+}
+
+.about-content p {
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.about-content ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.about-content li {
+    font-size: 16px;
+    margin: 10px 0;
+}
+
+.back-button {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 12px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+    background-color: #219150;
+}
+
+/* === Contact Page Styling === */
+.contact-container {
+    max-width: 700px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: var(--card-background);
+    box-shadow: 0 4px 6px var(--shadow-color);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.contact-content h2 {
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.contact-content p {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.contact-content label {
+    display: block;
+    text-align: left;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.contact-content input,
+.contact-content textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 16px;
+    background-color: var(--card-background);
+    color: var(--text-color);
+    margin-bottom: 15px;
+}
+
+.contact-content textarea {
+    resize: none;
+}
+
+.contact-content button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: var(--primary-color);
+    border: none;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.contact-content button:hover {
+    background-color: #219150;
+}
+
+.contact-info {
+    margin-top: 20px;
+    font-size: 16px;
+}
+
+.contact-info a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.contact-info a:hover {
+    text-decoration: underline;
+}
+
+/* === Analytics Tab Styling === */
+#analyticsTab {
+    padding: 20px;
+    text-align: center;
+}
+
+.analytics-summary {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.stat-box {
+    background: var(--card-background);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 3px 6px var(--shadow-color);
+    min-width: 150px;
+    text-align: center;
+}
+
+.stat-box h3 {
+    font-size: 18px;
+    color: var(--text-color);
+    margin-bottom: 5px;
+}
+
+.stat-box p {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Chart Container */
+.chart-container {
+    width: 80%;
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+.report-container {
+    background-color: var(--card-background);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px var(--shadow-color);
+    margin-top: 20px;
+    text-align: center;
+}
+
+.report-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.report-controls button {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    background-color: var(--primary-color);
+    border: none;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.report-controls button:hover {
+    background-color: #219150;
+}
+
+.report-summary {
+    background: var(--card-background);
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    margin-bottom: 10px;
+}
+
+.report-task-list {
+    background: var(--card-background);
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    text-align: left;
+}
+
+.report-task-list ul {
+    list-style: none;
+    padding: 0;
+}
+
+.report-task-list li {
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .report-container {
+    background-color: var(--secondary-color);
+}

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - TaskFlow</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<script>
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+    document.getElementById("contactForm").addEventListener("submit", function (event) {
+        event.preventDefault(); // Prevent default form submission
+
+        let valid = true;
+
+        // Name Validation
+        const name = document.getElementById("name").value.trim();
+        const nameError = document.getElementById("nameError") || document.createElement("span");
+        nameError.classList.add("error-message");
+        if (!nameError.parentNode) document.getElementById("name").after(nameError);
+        
+        if (name === "") {
+            nameError.textContent = "Name is required.";
+            valid = false;
+        } else {
+            nameError.textContent = "";
+        }
+
+        // Email Validation
+        const email = document.getElementById("email").value.trim();
+        const emailError = document.getElementById("emailError") || document.createElement("span");
+        emailError.classList.add("error-message");
+        if (!emailError.parentNode) document.getElementById("email").after(emailError);
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            emailError.textContent = "Enter a valid email address.";
+            valid = false;
+        } else {
+            emailError.textContent = "";
+        }
+
+        // Message Validation
+        const message = document.getElementById("message").value.trim();
+        const messageError = document.getElementById("messageError") || document.createElement("span");
+        messageError.classList.add("error-message");
+        if (!messageError.parentNode) document.getElementById("message").after(messageError);
+        
+        if (message.length < 10) {
+            messageError.textContent = "Message must be at least 10 characters.";
+            valid = false;
+        } else if (message.length > 500) {
+            messageError.textContent = "Message must be under 500 characters.";
+            valid = false;
+        } else {
+            messageError.textContent = "";
+        }
+
+        // If all fields are valid, show success message
+        if (valid) {
+            alert("✅ Message sent successfully! We'll get back to you soon.");
+            document.getElementById("contactForm").reset(); // Reset the form
+        }
+    });
+</script>
+
+<body>
+    <header class="app-header">
+        <button id="menuToggle" class="menu-btn">☰</button>
+        <img src="../assets/icon.png" alt="TaskFlow Logo" class="app-logo" />
+        <h1 class="app-title">TaskFlow</h1>
+      </header>
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <h3>Navigation</h3>
+      <ul>
+          <li><a href="index.html">🏠 Home</a></li>
+          <li><a href="about.html">ℹ️ About</a></li>
+          <li><a href="contact.html">📞 Contact</a></li>
+      </ul>
+    </aside>
+
+    <main class="contact-container">
+        <section class="contact-content">
+            <h2>📬 Get in Touch</h2>
+            <p>We'd love to hear from you! Whether you have a question, suggestion, or need support, feel free to reach out.</p>
+
+            <form id="contactForm">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" placeholder="Your Name" required>
+
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" placeholder="Your Email" required>
+
+                <label for="message">Message:</label>
+                <textarea id="message" name="message" placeholder="Your Message" rows="5" required></textarea>
+
+                <button type="submit">Send Message</button>
+            </form>
+
+            <p class="contact-info">
+                📧 Email: <a href="mailto:support@taskflow.com">support@taskflow.com</a><br>
+                📍 Address: TaskFlow HQ, Agra, India
+            </p>
+
+            <a href="index.html" class="back-button">⬅️ Back to TaskFlow</a>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>&copy; <span id="currentYear"></span> TaskFlow. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        document.getElementById('contactForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+            alert("✅ Message sent successfully! We'll get back to you soon.");
+            this.reset(); // Clear the form
+        });
+    </script>
+</body>
+</html>

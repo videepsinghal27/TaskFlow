@@ -8,18 +8,34 @@ function createWindow() {
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
+      nodeIntegration: true, // Allows Node.js access
+      contextIsolation: false, // Prevents script isolation
+      enableRemoteModule: true, // Enables remote module
+      sandbox: false, // Disables sandbox restrictions
+      webSecurity: false, // ✅ Allows localStorage and loads local resources
+      allowRunningInsecureContent: true // ✅ Ensures localStorage works properly
     }
   });
+
+    // Load the correct file in packaged mode
+    const startURL = app.isPackaged
+    ? `file://${path.join(app.getAppPath(), 'src', 'index.html')}`
+    : `file://${path.join(__dirname, 'src', 'index.html')}`;
 
   mainWindow.loadFile('src/index.html');
 
   // Apply saved theme when window loads
   mainWindow.webContents.on('did-finish-load', () => {
+    checkForUpdates();
     mainWindow.webContents.executeJavaScript(`
-      const theme = localStorage.getItem('theme') || 'light';
-      document.documentElement.setAttribute('data-theme', theme);
+      (() => {
+        try {
+          const theme = localStorage.getItem('theme') || 'light';
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (error) {
+          console.error('⚠️ LocalStorage Access Error:', error);
+        }
+      })();
     `);
   });
 
@@ -29,6 +45,54 @@ function createWindow() {
 }
 
 app.whenReady().then(createWindow);
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});
+
+// ✅ AutoUpdater Configuration
+autoUpdater.autoDownload = false; // Only notify the user; don't auto-download
+
+autoUpdater.on('update-available', (info) => {
+  console.log(`Update available: Version ${info.version}`);
+  dialog.showMessageBox({
+    type: 'info',
+    title: 'Update Available',
+    message: `A new version (${info.version}) is available. Do you want to update now?`,
+    buttons: ['Update', 'Later']
+  }).then(result => {
+    if (result.response === 0) { // User clicked 'Update'
+      autoUpdater.downloadUpdate();
+    }
+  });
+});
+
+autoUpdater.on('update-downloaded', () => {
+  dialog.showMessageBox({
+    type: 'info',
+    title: 'Update Ready',
+    message: 'Update downloaded. Restart the app to apply changes.',
+    buttons: ['Restart', 'Later']
+  }).then(result => {
+    if (result.response === 0) { // User clicked 'Restart'
+      autoUpdater.quitAndInstall();
+    }
+  });
+});
+
+// ✅ Function to Manually Check for Updates
+function checkForUpdates() {
+  autoUpdater.checkForUpdates();
+}
+
+// Expose checkForUpdates to the Renderer Process
+ipcMain.on('check-for-updates', () => {
+  checkForUpdates();
+});
 
 // Listen for theme changes from renderer
 ipcMain.on('set-theme', (event, theme) => {

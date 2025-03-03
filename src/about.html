@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About TaskFlow</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="app-header">
+        <button id="menuToggle" class="menu-btn">☰</button>
+        <img src="../assets/icon.png" alt="TaskFlow Logo" class="app-logo" />
+        <h1 class="app-title">TaskFlow</h1>
+      </header>
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <h3>Navigation</h3>
+      <ul>
+          <li><a href="index.html">🏠 Home</a></li>
+          <li><a href="about.html">ℹ️ About</a></li>
+          <li><a href="contact.html">📞 Contact</a></li>
+          <li><a href="#" id="analyticsTabBtn">📊 Analytics</a></li>
+      </ul>
+    </aside>
+    
+    <main class="about-container">
+        <section class="about-content">
+            <h2>Welcome to TaskFlow!</h2>
+            <p>TaskFlow is a powerful yet easy-to-use task management tool designed to help you organize and track your tasks efficiently.</p>
+            
+            <h3>🔹 Features:</h3>
+            <ul>
+                <li>🌟 **Kanban-style task management**</li>
+                <li>🔔 **Task reminders & notifications**</li>
+                <li>📊 **Priority-based task filtering**</li>
+                <li>☁️ **Cloud sync with Firebase & offline support**</li>
+                <li>🎨 **Custom themes & UI customization**</li>
+            </ul>
+
+            <h3>📌 Version:</h3>
+            <p>TaskFlow v1.0.0</p>
+
+            <h3>💡 Our Mission:</h3>
+            <p>We aim to provide a seamless and productive experience for managing personal and professional tasks efficiently.</p>
+
+            <a href="index.html" class="back-button">⬅️ Back to TaskFlow</a>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>&copy; <span id="currentYear"></span> TaskFlow. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>

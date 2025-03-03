@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TaskFlow</title>
   <link rel="stylesheet" href="styles.css" />
@@ -10,9 +11,21 @@
 <body>
   <!-- Header Section -->
   <header class="app-header">
+    <button id="menuToggle" class="menu-btn">☰</button>
     <img src="../assets/icon.png" alt="TaskFlow Logo" class="app-logo" />
     <h1 class="app-title">TaskFlow</h1>
   </header>
+
+<!-- Sidebar Navigation -->
+<aside class="sidebar">
+  <h3>Navigation</h3>
+  <ul>
+      <li><a href="index.html">🏠 Home</a></li>
+      <li><a href="about.html">ℹ️ About</a></li>
+      <li><a href="contact.html">📞 Contact</a></li>
+      <li><a href="#" id="analyticsTabBtn">📊 Analytics</a></li>
+  </ul>
+</aside>
 
   <!-- Offline/Network Status -->
   <div id="offlineStatus" class="offline-indicator" style="display:none;">🔴 Offline Mode</div>
@@ -27,46 +40,65 @@
 
   <!-- Container for List View (default visible) -->
   <div id="listView" class="view-container">
+
+    <!-- Add search bar above the task list -->
+    <div class="search-container">
+      <input type="text" id="taskSearch" placeholder="Search tasks..." oninput="filterTasksByKeyword()">
+    </div>
+
     <!-- Existing task list goes here -->
     <div id="taskList"></div>
   </div>
 
   <!-- Container for Board (Kanban) View -->
-  <div id="boardView" class="view-container" style="display: none;">
-    <div class="board-filters">
-      <label for="statusFilter">Filter by Status:</label>
-      <select id="statusFilter">
-        <option value="all">All</option>
-        <option value="todo">To Do</option>
-        <option value="inProgress">In Progress</option>
-        <option value="done">Done</option>
-      </select>
-    
-      <label for="priorityFilter">Filter by Priority:</label>
-      <select id="priorityFilter">
-        <option value="all">All</option>
-        <option value="low">Low</option>
-        <option value="medium">Medium</option>
-        <option value="high">High</option>
-      </select>
-    
-      <label for="tagFilter">Filter by Tag:</label>
-      <input type="text" id="tagFilter" placeholder="Enter tag (e.g., urgent)" />
-    </div>    
-    <!-- Example columns: you may customize columns as needed -->
-    <div class="board-column" id="todoColumn">
-      <h2>To Do</h2>
-      <div class="column-tasks" id="todoTasks"></div>
-    </div>
-    <div class="board-column" id="inProgressColumn">
-      <h2>In Progress</h2>
-      <div class="column-tasks" id="inProgressTasks"></div>
-    </div>
-    <div class="board-column" id="doneColumn">
-      <h2>Done</h2>
-      <div class="column-tasks" id="doneTasks"></div>
-    </div>
+  <!-- Board View Container -->
+<div id="boardView" class="view-container" style="display: none;">
+
+  <!-- Search and Filters in a Single Row -->
+  <div class="board-controls">
+      <div class="search-container">
+          <input type="text" id="taskSearch" placeholder="Search tasks..." oninput="filterTasksByKeyword()">
+      </div>
+
+      <div class="board-filters">
+          <label for="statusFilter">Status:</label>
+          <select id="statusFilter">
+              <option value="all">All</option>
+              <option value="todo">To Do</option>
+              <option value="inProgress">In Progress</option>
+              <option value="done">Done</option>
+          </select>
+
+          <label for="priorityFilter">Priority:</label>
+          <select id="priorityFilter">
+              <option value="all">All</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+          </select>
+
+          <label for="tagFilter">Tag:</label>
+          <input type="text" id="tagFilter" placeholder="Enter tag">
+      </div>
   </div>
+
+  <!-- Kanban Board Layout -->
+  <div class="board-container">
+      <div class="board-column" id="todoColumn">
+          <h2>To Do</h2>
+          <div class="column-tasks" id="todoTasks"></div>
+      </div>
+      <div class="board-column" id="inProgressColumn">
+          <h2>In Progress</h2>
+          <div class="column-tasks" id="inProgressTasks"></div>
+      </div>
+      <div class="board-column" id="doneColumn">
+          <h2>Done</h2>
+          <div class="column-tasks" id="doneTasks"></div>
+      </div>
+  </div>
+
+</div>
   
   <!-- Container for Calendar View -->
   <div id="calendarView" class="view-container" style="display: none;">
@@ -132,13 +164,117 @@
   <!-- Task List -->
   <div id="taskList"></div>
 
+  <!-- Analytics Tab -->
+<div id="analyticsTab" class="view-container" style="display: none;">
+  <h2>📊 Task Analytics</h2>
+  <!-- Date Range Filter in Analytics Section -->
+  <div class="date-filter">
+    <label for="startDate">📅 Start Date:</label>
+    <input type="date" id="startDate">
+
+    <label for="endDate">📅 End Date:</label>
+    <input type="date" id="endDate">
+
+    <button id="applyDateFilter">🔍 Apply Filter</button>
+  </div>
+
+  <!-- Tag Filter for Analytics -->
+  <div class="tag-filter">
+    <label for="analyticsTagFilter">🏷 Filter by Tag:</label>
+    <select id="analyticsTagFilter">
+      <option value="all">All Tags</option>
+    </select>
+    <button id="applyTagFilter">🔍 Apply Filter</button>
+  </div>
+
+  <!-- Priority Filter for Analytics -->
+  <div class="priority-filter">
+    <label for="analyticsPriorityFilter">⚡ Filter by Priority:</label>
+    <select id="analyticsPriorityFilter">
+      <option value="all">All Priorities</option>
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+    </select>
+    <button id="applyPriorityFilter">🔍 Apply Filter</button>
+  </div>
+
+  <!-- Report Generation Section -->
+  <div class="report-section">
+    <h3>📄 Generate Reports</h3>
+    <button id="weeklyReportBtn">📅 Weekly Report</button>
+    <button id="monthlyReportBtn">📆 Monthly Report</button>
+    <button onclick="exportReport('pdf')">📄 Export as PDF</button>
+    <button onclick="exportReport('csv')">📜 Export as CSV</button>
+    <input type="email" id="reportEmail" placeholder="Enter your email">
+    <button onclick="sendReportByEmail()">📧 Send via Email</button>
+  </div>
+
+  <div class="report-summary">
+    <h3>📈 Report Summary</h3>
+    <p>✅ Completed: <span id="reportCompleted">0</span></p>
+    <p>⏳ Pending: <span id="reportPending">0</span></p>
+    <p>⚠️ Overdue: <span id="reportOverdue">0</span></p>
+  </div>
+
+  <div class="report-task-list">
+    <h3>📋 Tasks in Selected Report</h3>
+    <ul id="reportTaskList"></ul>
+  </div>
+  
+  <!-- Summary Statistics -->
+  <div class="analytics-summary">
+      <div class="stat-box">
+          <h3>Total Tasks</h3>
+          <p id="totalTasks">0</p>
+      </div>
+      <div class="stat-box">
+          <h3>Completed Tasks</h3>
+          <p id="completedTasks">0</p>
+      </div>
+      <div class="stat-box">
+          <h3>Pending Tasks</h3>
+          <p id="pendingTasks">0</p>
+      </div>
+      <div class="stat-box">
+          <h3>Overdue Tasks</h3>
+          <p id="overdueTasks">0</p>
+      </div>
+  <!-- Chart for Task Statistics -->
+  <div class="chart-container">
+    <canvas id="taskChart"></canvas>
+  </div>
+  <!-- Priority Breakdown Chart -->
+  <div class="chart-container">
+    <h3>📊 Tasks by Priority</h3>
+      <canvas id="priorityChart"></canvas>
+  </div>
+
+  <!-- Status Breakdown Chart -->
+  <div class="chart-container">
+    <h3>📊 Tasks by Status</h3>
+      <canvas id="statusChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h3>🕒 Total Time Spent on Tasks</h3>
+    <p id="totalTrackedTime">0h 0m 0s</p>
+  </div>
+</div>
+
+  <!-- Chart Placeholder -->
+  <div class="chart-container">
+      <canvas id="taskChart"></canvas>
+  </div>
+</div>
+
   <!-- Footer Section -->
   <footer class="app-footer">
     <p>&copy; <span id="currentYear"></span> TaskFlow. All rights reserved.</p>
     <nav class="footer-nav">
-      <a href="#" class="footer-link">Home</a>
-      <a href="#" class="footer-link">About</a>
-      <a href="#" class="footer-link">Contact</a>
+      <a href="index.html" class="footer-link">Home</a>
+      <a href="about.html" class="footer-link">About</a>
+      <a href="contact.html" class="footer-link">Contact</a>
     </nav>
   </footer>
 
